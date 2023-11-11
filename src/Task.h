@@ -1,5 +1,6 @@
 #pragma once
 #include <Arduino.h>
+#include "AbstractTask.h"
 
 class Task : public AbstractTask {
 public:
@@ -46,7 +47,7 @@ protected:
       this,
       1,
       &tHandle,
-      taskCore
+      taskCore > (ESP.getChipCores() - 1) ? (ESP.getChipCores() - 1) : taskCore
     );
 
     setupDone = true;

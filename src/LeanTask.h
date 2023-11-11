@@ -1,5 +1,6 @@
 #pragma once
 #include <Arduino.h>
+#include "Task.h"
 
 class LeanTask : public Task {
 public:
