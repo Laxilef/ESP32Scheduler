@@ -7,6 +7,6 @@
         "url": "https://github.com/laxilef/ESP32Scheduler.git"
     },
     "frameworks": "arduino",
-    "platforms": "espressif",
-    "version": "1.0.4"
+    "platforms": "espressif32",
+    "version": "1.0.0"
 }
