@@ -39,7 +39,7 @@ protected:
   }
 
   virtual int getTaskPriority() {
-    return 1;
+    return 0;
   }
 
   void static xLoopWrapper(void* pvParameters) {
@@ -47,11 +47,10 @@ protected:
   }
 
   void begin() override {
-    if (setupDone || !enabled) {
+    if (!enabled || tHandle != nullptr) {
       return;
     }
 
-    setup();
     xTaskCreatePinnedToCore(
       this->xLoopWrapper,
       getTaskName(),
@@ -61,12 +60,16 @@ protected:
       &tHandle,
       getTaskCore() > (ESP.getChipCores() - 1) ? (ESP.getChipCores() - 1) : getTaskCore()
     );
-
-    setupDone = true;
   }
 
   void loopWrapper() override {
     while (true) {
+      if (!setupDone) {
+        setup();
+        setupDone = true;
+      }
+
+      yield();
       loop();
 
       if (interval == 0) {
@@ -79,5 +82,5 @@ protected:
   }
 
 private:
-  TaskHandle_t tHandle;
+  TaskHandle_t tHandle = nullptr;
 };
