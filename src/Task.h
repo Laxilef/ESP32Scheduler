@@ -22,13 +22,30 @@ public:
   }
 
   void delay(unsigned long ms) override {
+    if ( (ms == 0 || ms < portTICK_PERIOD_MS) ) {
+      yield();
+      return;
+    }
+
     vTaskDelay(ms / portTICK_PERIOD_MS);
   }
 
 protected:
-  const char* taskName = "";
-  const int taskCore = 1;
-  const uint32_t taskStackSize = 10000;
+  virtual const char* getTaskName() {
+    return "";
+  }
+  
+  virtual int getTaskCore() {
+    return 0;
+  }
+
+  virtual uint32_t getTaskStackSize() {
+    return 10000;
+  }
+
+  virtual int getTaskPriority() {
+    return 1;
+  }
 
   void static xLoopWrapper(void *pvParameters) {
     static_cast<Task*>(pvParameters)->loopWrapper();
@@ -42,12 +59,12 @@ protected:
     setup();
     xTaskCreatePinnedToCore(
       this->xLoopWrapper,
-      taskName,
-      taskStackSize,
+      getTaskName(),
+      getTaskStackSize(),
       this,
-      1,
+      getTaskPriority(),
       &tHandle,
-      taskCore > (ESP.getChipCores() - 1) ? (ESP.getChipCores() - 1) : taskCore
+      getTaskCore() > (ESP.getChipCores() - 1) ? (ESP.getChipCores() - 1) : getTaskCore()
     );
 
     setupDone = true;
