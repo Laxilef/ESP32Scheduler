@@ -16,25 +16,20 @@ public:
     AbstractTask::disable();
     vTaskSuspend(tHandle);
   }
-  
+
   void yield() override {
     taskYIELD();
   }
 
   void delay(unsigned long ms) override {
-    if ( (ms == 0 || ms < portTICK_PERIOD_MS) ) {
-      yield();
-      return;
-    }
-
-    vTaskDelay(ms / portTICK_PERIOD_MS);
+    vTaskDelay((ms == 0 || ms < portTICK_PERIOD_MS) ? 1 : ms / portTICK_PERIOD_MS);
   }
 
 protected:
   virtual const char* getTaskName() {
     return "";
   }
-  
+
   virtual int getTaskCore() {
     return 0;
   }
@@ -47,12 +42,12 @@ protected:
     return 1;
   }
 
-  void static xLoopWrapper(void *pvParameters) {
+  void static xLoopWrapper(void* pvParameters) {
     static_cast<Task*>(pvParameters)->loopWrapper();
   }
 
   void begin() override {
-    if ( setupDone || !enabled ) {
+    if (setupDone || !enabled) {
       return;
     }
 
@@ -73,7 +68,13 @@ protected:
   void loopWrapper() override {
     while (true) {
       loop();
-      delay(interval);
+
+      if (interval == 0) {
+        yield();
+
+      } else {
+        delay(interval);
+      }
     }
   }
 
