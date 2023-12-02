@@ -30,8 +30,8 @@ protected:
     return "";
   }
 
-  virtual int getTaskCore() {
-    return 0;
+  virtual BaseType_t getTaskCore() {
+    return tskNO_AFFINITY;
   }
 
   virtual uint32_t getTaskStackSize() {
@@ -39,16 +39,27 @@ protected:
   }
 
   virtual int getTaskPriority() {
-    return 0;
+    return 1;
   }
 
   void static xLoopWrapper(void* pvParameters) {
-    static_cast<Task*>(pvParameters)->loopWrapper();
+    Task* task = static_cast<Task*>(pvParameters);
+    while (true) {
+      task->loopWrapper();
+    }
   }
 
   void begin() override {
     if (!enabled || tHandle != nullptr) {
       return;
+    }
+
+    BaseType_t coreId;
+    if (getTaskCore() == tskNO_AFFINITY || ESP.getChipCores() == 1 || getTaskCore() > (ESP.getChipCores() - 1)) {
+      coreId = tskNO_AFFINITY;
+      
+    } else {
+      coreId = getTaskCore();
     }
 
     xTaskCreatePinnedToCore(
@@ -58,26 +69,24 @@ protected:
       this,
       getTaskPriority(),
       &tHandle,
-      getTaskCore() > (ESP.getChipCores() - 1) ? (ESP.getChipCores() - 1) : getTaskCore()
+      coreId
     );
   }
 
   void loopWrapper() override {
-    while (true) {
-      if (!setupDone) {
-        setup();
-        setupDone = true;
-      }
-
+    if (!setupDone) {
+      setup();
+      setupDone = true;
       yield();
-      loop();
+    }
 
-      if (interval == 0) {
-        yield();
+    loop();
 
-      } else {
-        delay(interval);
-      }
+    if (interval == 0) {
+      yield();
+
+    } else {
+      delay(interval);
     }
   }
 
